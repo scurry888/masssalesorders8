@@ -119,8 +119,8 @@ public class OrdersEdmProvider extends EdmProvider {
         properties.add(new SimpleProperty().setName("PurchaseOrderByCustomer").setType(EdmSimpleTypeKind.String).setFacets(
                 new Facets().setMaxLength(35)));
 
-        properties.add(new SimpleProperty().setName("RequestedDeliveryDate").setType(EdmSimpleTypeKind.DateTime).setFacets(
-                new Facets().setPrecision(0)));
+  /*      properties.add(new SimpleProperty().setName("RequestedDeliveryDate").setType(EdmSimpleTypeKind.DateTime).setFacets(
+                new Facets().setPrecision(0))); */
 
         properties.add(new SimpleProperty().setName("ShippingType").setType(EdmSimpleTypeKind.String).setFacets(
                 new Facets().setMaxLength(2)));

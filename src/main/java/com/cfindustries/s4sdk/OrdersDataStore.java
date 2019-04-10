@@ -18,50 +18,111 @@
  ******************************************************************************/
 package com.cfindustries.s4sdk;
 
+import java.net.URI;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.time.LocalDateTime;
+
+import com.sap.cloud.sdk.cloudplatform.logging.CloudLoggerFactory;
+import com.sap.cloud.sdk.odatav2.connectivity.ODataException;
+
+import com.sap.cloud.sdk.s4hana.datamodel.odata.helper.Order;
+import com.sap.cloud.sdk.s4hana.datamodel.odata.namespaces.salesorder.SalesOrder;
+import com.sap.cloud.sdk.s4hana.datamodel.odata.services.DefaultSalesOrderService;
+import org.slf4j.Logger;
+
+import javax.servlet.http.HttpServletResponse;
 
 public class OrdersDataStore {
+
+  private static final Logger logger = CloudLoggerFactory.getLogger(OrdersDataStore.class);
 
   // Data accessors
   public Map<String, Object> getOrder(final String salesOrderStart) {
     Map<String, Object> data = null;
 
-    data = createOrder(1, "F1 W03", 1, 189189.43, "EUR", "2012", updated, "file://imagePath/w03");
+    try {
+
+      logger.error("Right after try");
+      final List<SalesOrder> salesOrders =
+              new DefaultSalesOrderService()
+                      .getAllSalesOrder()
+                      .select(SalesOrder.SALES_ORDER,
+                              SalesOrder.SALES_ORDER_TYPE,
+                              SalesOrder.SALES_ORGANIZATION,
+                              SalesOrder.ORGANIZATION_DIVISION,
+                              SalesOrder.DISTRIBUTION_CHANNEL,
+                              SalesOrder.PURCHASE_ORDER_BY_CUSTOMER,
+                              SalesOrder.REQUESTED_DELIVERY_DATE,
+                              SalesOrder.INCOTERMS_CLASSIFICATION,
+                              SalesOrder.SOLD_TO_PARTY,
+                              SalesOrder.SHIPPING_TYPE,
+                              SalesOrder.INCOTERMS_LOCATION1,
+                              SalesOrder.INCOTERMS_VERSION,
+                              SalesOrder.CUSTOMER_PAYMENT_TERMS,
+                              SalesOrder.REFERENCE_SD_DOCUMENT)
+                      .orderBy(SalesOrder.SOLD_TO_PARTY, Order.ASC)
+                      .filter(SalesOrder.SALES_ORDER.eq(salesOrderStart))
+                      .execute();
+      //                           .execute(new ErpConfigContext("ErpQueryEndpointSteve"));
+
+      logger.error("Right after execute");
+
+      SalesOrder salesOrder = salesOrders.get(0);
+
+      data = createOrder(salesOrder.getSalesOrder(), salesOrder.getSalesOrderType(), salesOrder.getSalesOrganization(),
+              salesOrder.getOrganizationDivision(), salesOrder.getDistributionChannel(),
+              salesOrder.getPurchaseOrderByCustomer(), salesOrder.getRequestedDeliveryDate(),
+              salesOrder.getIncotermsClassification(), salesOrder.getSoldToParty(), salesOrder.getCustomerPaymentTerms());
+
+    } catch (final ODataException e) {
+      logger.error(e.getMessage(), e);
+    }
 
     return data;
   }
 
-  private Map<String, Object> createOrder(final int carId, final String model, final int manufacturerId,
-      final double price,
-      final String currency, final String modelYear, final Calendar updated, final String imagePath) {
+  private Map<String, Object> createOrder(final String orderNumber, final String orderType, final String organization,
+      final String division, final String channel, final String poNumber, final LocalDateTime reqDelDate, final String inco,
+      final String soldTo, final String custPayTerms)
+
+  {
     Map<String, Object> data = new HashMap<String, Object>();
 
-    data.put("Id", carId);
-    data.put("Model", model);
-    data.put("ManufacturerId", manufacturerId);
-    data.put("Price", price);
-    data.put("Currency", currency);
-    data.put("ModelYear", modelYear);
-    data.put("Updated", updated);
-    data.put("ImagePath", imagePath);
+    data.put("SalesOrderStart", orderNumber);
+    data.put("SalesOrderEnd", " ");
+    data.put("SalesOrderType", orderType);
+    data.put("SalesOrganization", organization);
+    data.put("DistributionChannel", channel);
+    data.put("OrganizationDivision", division);
+    data.put("SoldToParty", soldTo);
+    data.put("PurchaseOrderByCustomer", poNumber);
+    //data.put("RequestedDeliveryDate", "2019-04-12T15:00");
+    data.put("ShippingType", " ");
+    data.put("IncotermsClassification", inco);
+    data.put("IncotermsLocation1", " ");
+    data.put("IncotermsVersion", " ");
+    data.put("CustomerPaymentTerms", custPayTerms);
+    data.put("ReferenceSDDocument", " ");
+    data.put("Material", " ");
+    data.put("RequestedQuantity", 25);
+    data.put("RequestedQuantityUnit", "TON");
+    data.put("ProductionPlant", "1700");
+    data.put("NbrOrdersToBeCreated", 1);
 
     return data;
   }
 
 
-  public List<Map<String, Object>> getOrders() {
-    List<Map<String, Object>> cars = new ArrayList<Map<String, Object>>();
-    cars.add(getCar(1));
-    cars.add(getCar(2));
-    cars.add(getCar(3));
-    cars.add(getCar(4));
-    cars.add(getCar(5));
-    return cars;
+ public List<Map<String, Object>> getOrders() {
+    List<Map<String, Object>> orders = new ArrayList<Map<String, Object>>();
+    orders.add(getOrder("0030000006"));
+    orders.add(getOrder("0030000001"));
+
+    return orders;
   }
 
 }

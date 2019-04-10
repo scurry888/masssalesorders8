@@ -15,6 +15,44 @@
 		<version.cxf>2.7.6</version.cxf>
 		<version.slf4j>1.7.1</version.slf4j>
 		<version.olingo>2.0.11</version.olingo>
+
+
+		<packageName>com.cfindustries.s4sdk</packageName>
+
+		<proxy.host />
+		<proxy.port />
+		<non.proxy.hosts />
+
+		<!-- Properties that are related to the SAP Cloud Platform. -->
+		<scp.sdkVersion>1.44.12</scp.sdkVersion>
+
+		<!-- this is the location of your local SAP CP Neo runtime -->
+		<scp.sdkInstallPath>${project.basedir}/scp/sdk-${scp.sdkVersion}</scp.sdkInstallPath>
+		<scp.sdkLocalServerContentPath>${project.basedir}/localServerContent</scp.sdkLocalServerContentPath>
+		<scp.sdkErpEndpoint>${scp.sdkInstallPath}/server/config_master/service.destinations/destinations/ErpQueryEndpoint</scp.sdkErpEndpoint>
+
+		<scp.sdkSymbolicLink>${project.basedir}/scp/sdk</scp.sdkSymbolicLink>
+		<scp.sdkNeoCmdExtension>.sh</scp.sdkNeoCmdExtension>
+		<scp.sdkNeoCmd>${scp.sdkInstallPath}/tools/neo${scp.sdkNeoCmdExtension}</scp.sdkNeoCmd>
+		<scp.sdkLocalServer>${scp.sdkInstallPath}/server</scp.sdkLocalServer>
+
+		<scp.skipInstallSdk>false</scp.skipInstallSdk>
+		<scp.skipDeploy>false</scp.skipDeploy>
+		<scp.skipPutDestination>false</scp.skipPutDestination>
+		<scp.skipRestart>false</scp.skipRestart>
+		<scp.skipRollingUpdate>true</scp.skipRollingUpdate>
+
+		<scp.vmArguments />
+		<scp.vmSize>lite</scp.vmSize>
+		<scp.vmMinProcesses>1</scp.vmMinProcesses>
+		<scp.vmMaxProcesses>1</scp.vmMaxProcesses>
+
+		<scp.app />
+		<scp.host />
+		<scp.account />
+		<scp.username />
+		<scp.password />
+
 	</properties>
 
 	<build>
@@ -37,6 +75,108 @@
 					<artifactId>maven-eclipse-plugin</artifactId>
 					<version>2.9</version>
 				</plugin>
+
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-dependency-plugin</artifactId>
+					<version>3.1.1</version>
+					<configuration>
+						<artifactItems>
+							<artifactItem>
+								<groupId>com.sap.cloud</groupId>
+								<artifactId>neo-javaee7-wp-sdk</artifactId>
+								<version>${scp.sdkVersion}</version>
+								<type>zip</type>
+								<overWrite>false</overWrite>
+								<outputDirectory>${scp.sdkInstallPath}</outputDirectory>
+							</artifactItem>
+						</artifactItems>
+					</configuration>
+				</plugin>
+
+				<!-- Plugin for deployment to SAP Cloud Platform Neo. -->
+				<plugin>
+					<groupId>com.sap.cloud</groupId>
+					<artifactId>neo-javaee7-wp-maven-plugin</artifactId>
+					<version>${scp.sdkVersion}</version>
+					<executions>
+						<execution>
+							<id>stop</id>
+							<phase>install</phase>
+							<goals>
+								<goal>stop</goal>
+							</goals>
+							<configuration>
+								<skip>${scp.skipRestart}</skip>
+							</configuration>
+						</execution>
+						<execution>
+							<id>deploy</id>
+							<phase>install</phase>
+							<goals>
+								<goal>deploy</goal>
+							</goals>
+							<configuration>
+								<skip>${scp.skipDeploy}</skip>
+								<vmArguments>${scp.vmArguments}</vmArguments>
+							</configuration>
+						</execution>
+						<execution>
+							<id>start</id>
+							<phase>install</phase>
+							<goals>
+								<goal>start</goal>
+							</goals>
+							<configuration>
+								<skip>${scp.skipRestart}</skip>
+							</configuration>
+						</execution>
+						<execution>
+							<id>rolling-update</id>
+							<phase>install</phase>
+							<goals>
+								<goal>rolling-update</goal>
+							</goals>
+							<configuration>
+								<skip>${scp.skipRollingUpdate}</skip>
+							</configuration>
+						</execution>
+					</executions>
+					<configuration>
+						<sdkInstallPath>${scp.sdkInstallPath}</sdkInstallPath>
+						<skip>${scp.skipInstallSdk}</skip>
+
+						<application>${scp.app}</application>
+						<source>${project.build.directory}/${project.build.finalName}.war</source>
+
+						<vmArguments>${scp.vmArguments}</vmArguments>
+						<size>${scp.vmSize}</size>
+						<minimumProcesses>${scp.vmMinProcesses}</minimumProcesses>
+						<maximumProcesses>${scp.vmMaxProcesses}</maximumProcesses>
+
+						<host>${scp.host}</host>
+						<account>${scp.account}</account>
+						<user>${scp.username}</user>
+						<password>${scp.password}</password>
+						<synchronous>true</synchronous>
+
+						<httpProxyHost>${proxy.host}</httpProxyHost>
+						<httpProxyPort>${proxy.port}</httpProxyPort>
+						<httpsProxyHost>${proxy.host}</httpsProxyHost>
+						<httpsProxyPort>${proxy.port}</httpsProxyPort>
+
+						<consoleCommand />
+						<consoleHttpProxyHost>${proxy.host}</consoleHttpProxyHost>
+						<consoleHttpProxyPort>${proxy.port}</consoleHttpProxyPort>
+						<consoleHttpsProxyHost>${proxy.host}</consoleHttpsProxyHost>
+						<consoleHttpsProxyPort>${proxy.port}</consoleHttpsProxyPort>
+
+						<dbsystem />
+						<dbSize />
+						<dbUser />
+					</configuration>
+				</plugin>
+
 			</plugins>
 		</pluginManagement>
 
@@ -45,8 +185,8 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>8</source>
+					<target>8</target>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -65,6 +205,17 @@
 	</build>
 
 	<dependencies>
+		<dependency>
+			<groupId>com.sap.cloud.s4hana.cloudplatform</groupId>
+			<artifactId>scp-neo</artifactId>
+			<version>2.13.3</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sap.cloud.s4hana</groupId>
+			<artifactId>s4hana-all</artifactId>
+			<version>2.13.3</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.apache.olingo</groupId>
 			<artifactId>olingo-odata2-core</artifactId>
@@ -91,5 +242,90 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>${version.slf4j}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${version.slf4j}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>javax.inject</artifactId>
+			<version>1</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.sap.cloud</groupId>
+			<artifactId>neo-javaee7-wp-api</artifactId>
+			<version>1.46.10</version>
+			<scope>provided</scope>
+		</dependency>
+
 	</dependencies>
+
+	<profiles>
+		<!--
+        Profiles that are used to set the Neo SDK "neo" command extension ("neo.sh" or "neo.cmd")
+        -->
+		<profile>
+			<id>windows</id>
+			<activation>
+				<os>
+					<family>windows</family>
+				</os>
+			</activation>
+			<properties>
+				<scp.sdkNeoCmdExtension>.bat</scp.sdkNeoCmdExtension>
+			</properties>
+		</profile>
+		<profile>
+			<id>unix</id>
+			<activation>
+				<os>
+					<family>unix</family>
+				</os>
+			</activation>
+			<properties>
+				<scp.sdkNeoCmdExtension>.sh</scp.sdkNeoCmdExtension>
+			</properties>
+		</profile>
+
+		<!-- Profile setting properties for deploying to the local SAP CP runtime. -->
+		<profile>
+			<id>local-deploy</id>
+			<activation>
+				<property>
+					<name>!scp.app</name>
+				</property>
+			</activation>
+			<properties>
+				<scp.skipInstallSdk>true</scp.skipInstallSdk>
+				<scp.skipDeploy>true</scp.skipDeploy>
+				<scp.skipPutDestination>true</scp.skipPutDestination>
+				<scp.skipRestart>true</scp.skipRestart>
+				<scp.skipRollingUpdate>true</scp.skipRollingUpdate>
+			</properties>
+		</profile>
+
+		<!-- Profile setting properties for deploying a productive version to SAP CP. -->
+		<profile>
+			<id>scp-deploy</id>
+			<activation>
+				<property>
+					<name>productive</name>
+				</property>
+			</activation>
+			<properties>
+				<scp.skipInstallSdk>false</scp.skipInstallSdk>
+				<scp.skipDeploy>true</scp.skipDeploy>
+				<scp.skipPutDestination>false</scp.skipPutDestination>
+				<scp.skipRestart>true</scp.skipRestart>
+				<scp.skipRollingUpdate>false</scp.skipRollingUpdate>
+			</properties>
+		</profile>
+	</profiles>
+
 </project>
